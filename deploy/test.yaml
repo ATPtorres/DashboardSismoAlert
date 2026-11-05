@@ -1,0 +1,7 @@
+# Isolated test stack. Never point destructive tests at an operational database.
+services:
+  app:
+    ports: !override ['127.0.0.1:9443:8443', '127.0.0.1:9080:80']
+    environment:
+      APP_ORIGIN: https://localhost:9443
+      DEMO_ENABLED: 'true'

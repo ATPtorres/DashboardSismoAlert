@@ -1,0 +1,5 @@
+# Development only. Explicit opt-in; production compose keeps demonstration disabled.
+services:
+  app:
+    environment:
+      DEMO_ENABLED: 'true'
