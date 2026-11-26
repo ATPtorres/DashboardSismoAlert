@@ -12,5 +12,5 @@ return [
     'MYSQL_USER' => 'root',
     'MYSQL_PASSWORD' => '',
     'APP_ORIGIN' => 'http://localhost',
-    'DEMO_ENABLED' => 'false',
+    'DEMO_ENABLED' => 'true',
 ];

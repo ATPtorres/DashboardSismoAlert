@@ -37,6 +37,10 @@ try {
 
 Cambia `admin` por el nombre que quieras. La contraseña no se escribe en el historial ni se muestra al escribirla. El bootstrap solo funciona si la tabla de usuarios está vacía.
 
+## Simulación del dashboard
+
+La plantilla `xampp.example.php` habilita el modo **Simulación** para pruebas locales. Tras iniciar sesión o abrir el panel, espera a que cargue el estado y selecciona **Simulación** en el menú lateral. Permite probar reposo, anomalía, falla de sensor, pérdida de enlace, calibración, perfil no válido y espera de datos. Son valores sintéticos generados en el navegador: no proceden del MPU6050/ESP32, no activan LEDs ni buzzer, no se envían al backend y no se guardan en MySQL. Para ocultar la opción, cambia `DEMO_ENABLED` a `false` en `xampp.local.php`.
+
 ## Uso y límites
 
 - URL local: `http://localhost/DashboardSismoAlert/`.
