@@ -3,3 +3,6 @@ dist/
 node_modules/
 .env
 *.log
+
+# XAMPP local credentials
+/backend/config/xampp.local.php
