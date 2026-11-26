@@ -4,10 +4,17 @@ final class ApiError extends RuntimeException {
     public function __construct(public int $status, public string $errorCode, string $message) { parent::__construct($message); }
 }
 function fail(int $status, string $code, string $message): never { throw new ApiError($status,$code,$message); }
+function appSetting(string $key, mixed $default=null): mixed {
+    $file=__DIR__.'/../config/xampp.local.php';
+    static $local=null;
+    if($local===null) $local=is_file($file)?require $file:[];
+    $env=getenv($key);
+    return $env!==false?$env:(is_array($local)?($local[$key]??$default):$default);
+}
 function db(): PDO {
     static $pdo;
     if (!$pdo) {
-        $pdo = new PDO('mysql:host='.(getenv('DB_HOST') ?: 'db').';dbname='.getenv('MYSQL_DATABASE').';charset=utf8mb4', getenv('MYSQL_USER'), getenv('MYSQL_PASSWORD'), [PDO::ATTR_TIMEOUT=>2,PDO::ATTR_ERRMODE=>PDO::ERRMODE_EXCEPTION,PDO::ATTR_EMULATE_PREPARES=>false,PDO::ATTR_DEFAULT_FETCH_MODE=>PDO::FETCH_ASSOC]);
+        $pdo = new PDO('mysql:host='.(appSetting('DB_HOST','db')).';dbname='.appSetting('MYSQL_DATABASE','sismoalert').';charset=utf8mb4', appSetting('MYSQL_USER','sismoapp'), appSetting('MYSQL_PASSWORD',''), [PDO::ATTR_TIMEOUT=>2,PDO::ATTR_ERRMODE=>PDO::ERRMODE_EXCEPTION,PDO::ATTR_EMULATE_PREPARES=>false,PDO::ATTR_DEFAULT_FETCH_MODE=>PDO::FETCH_ASSOC]);
         $pdo->exec("SET time_zone = '+00:00'");
     }
     return $pdo;
@@ -78,5 +85,5 @@ function publicState(): array {
         'message'=>'Receptor físico pendiente de integración. Esperando datos.',
         'services'=>['identityApi'=>$available?'AVAILABLE':'UNAVAILABLE','database'=>$available?'AVAILABLE':'UNAVAILABLE'],
         'capabilities'=>['configWrite'=>false,'windowMetrics'=>false,'eventHistory'=>$available],
-        'notices'=>[], 'demoEnabled'=>getenv('DEMO_ENABLED')==='true'];
+        'notices'=>[], 'demoEnabled'=>in_array(appSetting('DEMO_ENABLED','false'),[true,'true',1,'1'],true)];
 }
