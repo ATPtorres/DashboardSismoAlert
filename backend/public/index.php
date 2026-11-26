@@ -4,7 +4,7 @@ require __DIR__.'/../src/core.php';
 header('Content-Type: application/json; charset=utf-8');
 header('Cache-Control: no-store');
 try {
-    $path=is_string($_GET['route']??null)?$_GET['route']:parse_url($_SERVER['REQUEST_URI'],PHP_URL_PATH);
+    $path=isset($_SERVER['PATH_INFO']) && (str_starts_with($_SERVER['PATH_INFO'],'/api/') || str_starts_with($_SERVER['PATH_INFO'],'/internal/')) ? $_SERVER['PATH_INFO'] : parse_url($_SERVER['REQUEST_URI'],PHP_URL_PATH);
     $method=$_SERVER['REQUEST_METHOD'];
     $origin=(string)appSetting('APP_ORIGIN','https://localhost:8443');
     $expected=parse_url($origin,PHP_URL_HOST).(parse_url($origin,PHP_URL_PORT)?':'.parse_url($origin,PHP_URL_PORT):'');
