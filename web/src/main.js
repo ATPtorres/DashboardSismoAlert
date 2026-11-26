@@ -92,7 +92,7 @@ async function switchDemo(on){
   renderEvents();render();poller.start();
 }
 bind('#enter-demo','click',async()=>{await switchDemo(true);location.hash='/simulacion';});
-bind('#simulation-start','click',async()=>{if(!demo)await switchDemo(true);demo?.setScenario($('#simulation-scenario').value);$('#demo-scenario').value=$('#simulation-scenario').value;render();location.hash='/panel';});
+bind('#simulation-start','click',async()=>{const scenario=$('#simulation-scenario').value;if(!demo)await switchDemo(true);$('#simulation-scenario').value=scenario;demo?.setScenario(scenario);$('#demo-scenario').value=scenario;render();location.hash='/panel';});
 bind('#simulation-stop','click',async()=>{await switchDemo(false);location.hash='/simulacion';});
 bind('#leave-demo','click',async()=>{await switchDemo(false);location.hash='/panel';});
 bind('#demo-scenario','change',e=>{demo?.setScenario(e.target.value);$('#simulation-scenario').value=e.target.value;render();});
