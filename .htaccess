@@ -1,0 +1,14 @@
+Options -Indexes
+RewriteEngine On
+
+# Impide solicitar directamente código, herramientas y documentación interna.
+RewriteCond %{THE_REQUEST} "\\s/+[^? ]*/(backend|tests|tools|deploy|docs|firmware)(/|[? ])" [NC]
+RewriteRule ^ - [F,L]
+
+# El API conserva rutas /api/v1/... aunque el proyecto viva en una subcarpeta htdocs.
+RewriteRule ^api/(.*)$ backend/public/index.php?route=/api/$1 [QSA,L]
+
+# Publica los recursos del frontend desde web/ sin cambiar las URLs relativas.
+RewriteRule ^(assets|styles|src)/(.*)$ web/$1/$2 [L]
+RewriteRule ^$ web/index.html [L]
+RewriteRule ^(.+)$ web/$1 [L]
