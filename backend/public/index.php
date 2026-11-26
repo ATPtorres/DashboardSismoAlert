@@ -4,12 +4,16 @@ require __DIR__.'/../src/core.php';
 header('Content-Type: application/json; charset=utf-8');
 header('Cache-Control: no-store');
 try {
-    $path=parse_url($_SERVER['REQUEST_URI'],PHP_URL_PATH);
+    $path=is_string($_GET['route']??null)?$_GET['route']:parse_url($_SERVER['REQUEST_URI'],PHP_URL_PATH);
     $method=$_SERVER['REQUEST_METHOD'];
-    $origin=getenv('APP_ORIGIN') ?: 'https://localhost:8443';
+    $origin=(string)appSetting('APP_ORIGIN','https://localhost:8443');
     $expected=parse_url($origin,PHP_URL_HOST).(parse_url($origin,PHP_URL_PORT)?':'.parse_url($origin,PHP_URL_PORT):'');
     if(($_SERVER['HTTP_HOST']??'')!==$expected) fail(403,'HOST_REJECTED','Host no permitido.');
-    if(($_SERVER['HTTPS']??'')!=='on') fail(403,'HTTPS_REQUIRED','Se requiere HTTPS.');
+    if(parse_url($origin,PHP_URL_SCHEME)!=='https') {
+        $localHost=in_array(strtolower(parse_url($origin,PHP_URL_HOST)??''),['localhost','127.0.0.1'],true);
+        $localClient=in_array($_SERVER['REMOTE_ADDR']??'', ['127.0.0.1','::1'],true);
+        if(!$localHost||!$localClient) fail(403,'HTTPS_REQUIRED','HTTP solo está permitido en localhost.');
+    } elseif(($_SERVER['HTTPS']??'')!=='on') fail(403,'HTTPS_REQUIRED','Se requiere HTTPS.');
     $mutation=!in_array($method,['GET','HEAD'],true);
     $internal=str_starts_with($path,'/internal/');
     if($mutation && !$internal && ($_SERVER['HTTP_ORIGIN']??'')!==$origin) fail(403,'ORIGIN_REJECTED','Origen no permitido.');
