@@ -38,7 +38,7 @@ Desactivada por defecto. Para habilitarla exclusivamente en desarrollo:
 docker compose -f compose.yaml -f deploy/demo.yaml up -d
 ```
 
-Pulse «Explorar demostración». Datos y eventos del simulador están etiquetados, acotados y solo en memoria del navegador. No se ingieren automáticamente en MySQL ni se envían comandos al hardware. Al salir se vacían gráfica y avisos. Para deshabilitar:
+En XAMPP la plantilla habilita la opción «Simulación» de forma local. Selecciona un escenario desde el menú lateral; los datos y eventos están etiquetados, acotados y solo en memoria del navegador. No se ingieren automáticamente en MySQL ni se envían comandos al hardware. Al detener la simulación se descartan gráfica y avisos. Para deshabilitarla, cambia `DEMO_ENABLED` a `false` en `backend/config/xampp.local.php`. Para deshabilitar:
 
 ```sh
 docker compose up -d
