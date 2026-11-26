@@ -32,7 +32,7 @@ function applySnapshot(data){
   const sameBoot=snapshot?.gateway?.bootId===newBoot && snapshot?.nodes?.[0]?.bootId===data.nodes[0]?.bootId;
   if(sameBoot && data.nodes[0] && snapshot?.nodes?.[0] && data.nodes[0].sequence<snapshot.nodes[0].sequence)throw new Error('Secuencia atrasada; esperando datos coherentes.');
   snapshot=data;receivedAt=performance.now();receiver=demo?true:data.receiverConnection!=='NO_DISPONIBLE';lastError='';
-  if(!demo){demoAllowed=data.demoEnabled??demoAllowed;$('#enter-demo').hidden=!demoAllowed;}
+  if(!demo){demoAllowed=data.demoEnabled??demoAllowed;$('#enter-demo').hidden=!demoAllowed;$('#simulation-nav').hidden=!demoAllowed;}
   const state=deriveState(snapshot,receivedAt,receivedAt,receiver);
   const reboot=previousGateway && previousGateway!==newBoot;previousGateway=newBoot;
   if(!paused)timeline.add(snapshot,state,receivedAt);
@@ -64,10 +64,11 @@ function render(){
   $('#active-alert').hidden=!events.active;
   if(events.active){text('#alert-title',state.detection==='ANOMALIA'?'Vibración anómala detectada':'Última anomalía · ya no se acredita vigencia');text('#alert-detail',`Nodo ${events.active.nodeId} · ${events.active.origin==='SIMULATED'?'SIMULADO':'REAL'}. Cerrar no controla el buzzer ni confirma recuperación.`);}
 }
-const titles={panel:'Vista general',eventos:'Avisos recientes',cuenta:'Mi cuenta',diagnostico:'Diagnóstico',historial:'Historial',cuentas:'Cuentas',configuracion:'Configuración',auditoria:'Auditoría',ayuda:'Acerca del sistema'};
+const titles={panel:'Vista general',eventos:'Avisos recientes',simulacion:'Simulación',cuenta:'Mi cuenta',diagnostico:'Diagnóstico',historial:'Historial',cuentas:'Cuentas',configuracion:'Configuración',auditoria:'Auditoría',ayuda:'Acerca del sistema'};
 async function route(){
   let page=location.hash.slice(2)||'panel';if(!titles[page])page='panel';
   if(['diagnostico','historial','cuentas','configuracion','auditoria'].includes(page)&&user?.role!=='ADMINISTRADOR'){page='cuenta';feedback('Acceso de administrador requerido.');}
+  if(page==='simulacion'&&!demoAllowed){page='panel';feedback('La simulación está desactivada en esta instalación.');location.hash='/panel';}
   $$('[data-view]').forEach(el=>el.hidden=el.dataset.view!==page);$$('[data-page]').forEach(el=>el.classList.toggle('active',el.dataset.page===page));text('#page-title',titles[page]);
   try {if(page==='diagnostico'){text('#diagnostic-output',JSON.stringify(await request('/api/v1/info'),null,2));}if(page==='cuentas')await loadUsers();if(page==='configuracion')await loadConfig();if(page==='panel')render();}catch(e){feedback(e.message);}
 }
@@ -80,11 +81,22 @@ bind('#dismiss-alert','click',()=>{events.dismiss();render();});
 bind('#pause-chart','click',()=>{paused=!paused;if(paused)pauseAt=performance.now();else timeline.gap(performance.now());text('#pause-chart',paused?'▶':'❚❚');$('#pause-chart').setAttribute('aria-label',paused?'Reanudar gráfica':'Pausar gráfica');render();});
 bind('#map-zoom-in','click',()=>map.zoomBy(1.5));bind('#map-zoom-out','click',()=>map.zoomBy(1/1.5));bind('#map-center','click',()=>map.center());
 async function switchDemo(on){
-  if(on&&!demoAllowed)throw new Error('La demostración está desactivada en este despliegue.');
-  poller.stop();if(on){const {Demo}=await import('./api/demo.js');demo=new Demo();}else demo=null;
-  snapshot=null;previousGateway=null;receiver=false;timeline=new Timeline();events=new EventStore();paused=false;$('#demo-banner').hidden=!on;$('#demo-scenario').value='normal';renderEvents();render();poller.start();
+  if(on&&!demoAllowed)throw new Error('La simulación está desactivada en esta instalación.');
+  poller.stop();
+  if(on){const {Demo}=await import('./api/demo.js');demo=new Demo();}else demo=null;
+  snapshot=null;previousGateway=null;receiver=false;timeline=new Timeline();events=new EventStore();paused=false;
+  $('#demo-banner').hidden=!on;$('#demo-scenario').value='normal';$('#simulation-scenario').value='normal';
+  $('#simulation-state').textContent=on?'EN EJECUCIÓN':'DETENIDA';
+  $('#simulation-state').classList.toggle('running',on);
+  $('#simulation-start').disabled=on;$('#simulation-stop').disabled=!on;
+  renderEvents();render();poller.start();
 }
-bind('#enter-demo','click',()=>switchDemo(true));bind('#leave-demo','click',()=>switchDemo(false));bind('#demo-scenario','change',e=>demo?.setScenario(e.target.value));
+bind('#enter-demo','click',async()=>{await switchDemo(true);location.hash='/simulacion';});
+bind('#simulation-start','click',async()=>{if(!demo)await switchDemo(true);demo?.setScenario($('#simulation-scenario').value);$('#demo-scenario').value=$('#simulation-scenario').value;render();location.hash='/panel';});
+bind('#simulation-stop','click',async()=>{await switchDemo(false);location.hash='/simulacion';});
+bind('#leave-demo','click',async()=>{await switchDemo(false);location.hash='/panel';});
+bind('#demo-scenario','change',e=>{demo?.setScenario(e.target.value);$('#simulation-scenario').value=e.target.value;render();});
+bind('#simulation-scenario','change',e=>{demo?.setScenario(e.target.value);$('#demo-scenario').value=e.target.value;render();});
 function table(container,headers,rows){
   if(!rows.length){empty(container,'Sin registros','No hay resultados en esta página y alcance.');return;}
   const wrap=document.createElement('div');wrap.className='table-scroll';const t=document.createElement('table'),head=document.createElement('thead'),tr=document.createElement('tr');
