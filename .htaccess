@@ -5,6 +5,10 @@ RewriteEngine On
 RewriteCond %{THE_REQUEST} "\\s/+[^? ]*/(backend|tests|tools|deploy|docs|firmware)(/|[? ])" [NC]
 RewriteRule ^ - [F,L]
 
+# Evita reescribir de nuevo los destinos internos ya resueltos por Apache.
+RewriteCond %{REQUEST_FILENAME} -f
+RewriteRule ^ - [L]
+
 # El API conserva rutas /api/v1/... aunque el proyecto viva en una subcarpeta htdocs.
 RewriteRule ^api/(.*)$ backend/public/index.php?route=/api/$1 [QSA,L]
 
