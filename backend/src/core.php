@@ -54,8 +54,12 @@ function hashPassword(string $p): string {
 }
 function scopes(string $id): array { return array_column(query('SELECT sector_id FROM user_sector_access WHERE user_id=? ORDER BY sector_id',[$id])->fetchAll(),'sector_id'); }
 function csrfToken(string $token): string { return hash('sha256','csrf:'.$token); }
+function sessionCookieName(): string {
+    return parse_url((string)appSetting('APP_ORIGIN','https://localhost:8443'),PHP_URL_SCHEME)==='https'?'__Host-sismo_session':'sismo_session';
+}
+function sessionToken(): string { return (string)($_COOKIE[sessionCookieName()]??''); }
 function sessionUser(bool $admin=false,bool $mutate=false): array {
-    $token=$_COOKIE['__Host-sismo_session']??'';
+    $token=sessionToken();
     if(!preg_match('/^[a-f0-9]{64}$/D',$token)) fail(401,'SESSION_REQUIRED','Inicie sesión.');
     $u=query('SELECT u.id,u.username,u.role,u.auth_version FROM sessions s JOIN users u ON u.id=s.user_id WHERE s.token_hash=? AND s.expires_at>UTC_TIMESTAMP(3) AND u.active=1 AND s.auth_version=u.auth_version',[hash('sha256',$token)])->fetch();
     if(!$u) fail(401,'SESSION_EXPIRED','La sesión terminó.');
@@ -75,7 +79,10 @@ function roleValue(mixed $v): string { if(!in_array($v,['USUARIO','ADMINISTRADOR
 function audit(?string $actor,string $sector,string $action,string $resource,string $outcome='OK'): void {
     query('INSERT INTO audit_logs(actor_id,sector_id,action,resource,outcome,correlation_id) VALUES (?,?,?,?,?,?)',[$actor,$sector,$action,$resource,$outcome,bin2hex(random_bytes(16))]);
 }
-function cookie(string $value,int $expires): void { setcookie('__Host-sismo_session',$value,['expires'=>$expires,'path'=>'/','secure'=>true,'httponly'=>true,'samesite'=>'Strict']); }
+function cookie(string $value,int $expires): void {
+    $secure=parse_url((string)appSetting('APP_ORIGIN','https://localhost:8443'),PHP_URL_SCHEME)==='https';
+    setcookie(sessionCookieName(),$value,['expires'=>$expires,'path'=>'/','secure'=>$secure,'httponly'=>true,'samesite'=>'Strict']);
+}
 function noExtra(array $data,array $keys): void { if(array_diff(array_keys($data),$keys)) fail(400,'UNKNOWN_FIELD','Campo no permitido.'); }
 function canonical(mixed $v): mixed { if(!is_array($v)) return $v; if(!array_is_list($v)) ksort($v); return array_map('canonical',$v); }
 function contentHash(array $v): string { return hash('sha256',json_encode(canonical($v),JSON_THROW_ON_ERROR|JSON_PRESERVE_ZERO_FRACTION)); }
