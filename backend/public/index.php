@@ -4,12 +4,16 @@ require __DIR__.'/../src/core.php';
 header('Content-Type: application/json; charset=utf-8');
 header('Cache-Control: no-store');
 try {
-    $path=parse_url($_SERVER['REQUEST_URI'],PHP_URL_PATH);
+    $path=isset($_SERVER['PATH_INFO']) && (str_starts_with($_SERVER['PATH_INFO'],'/api/') || str_starts_with($_SERVER['PATH_INFO'],'/internal/')) ? $_SERVER['PATH_INFO'] : parse_url($_SERVER['REQUEST_URI'],PHP_URL_PATH);
     $method=$_SERVER['REQUEST_METHOD'];
-    $origin=getenv('APP_ORIGIN') ?: 'https://localhost:8443';
+    $origin=(string)appSetting('APP_ORIGIN','https://localhost:8443');
     $expected=parse_url($origin,PHP_URL_HOST).(parse_url($origin,PHP_URL_PORT)?':'.parse_url($origin,PHP_URL_PORT):'');
     if(($_SERVER['HTTP_HOST']??'')!==$expected) fail(403,'HOST_REJECTED','Host no permitido.');
-    if(($_SERVER['HTTPS']??'')!=='on') fail(403,'HTTPS_REQUIRED','Se requiere HTTPS.');
+    if(parse_url($origin,PHP_URL_SCHEME)!=='https') {
+        $localHost=in_array(strtolower(parse_url($origin,PHP_URL_HOST)??''),['localhost','127.0.0.1'],true);
+        $localClient=in_array($_SERVER['REMOTE_ADDR']??'', ['127.0.0.1','::1'],true);
+        if(!$localHost||!$localClient) fail(403,'HTTPS_REQUIRED','HTTP solo está permitido en localhost.');
+    } elseif(($_SERVER['HTTPS']??'')!=='on') fail(403,'HTTPS_REQUIRED','Se requiere HTTPS.');
     $mutation=!in_array($method,['GET','HEAD'],true);
     $internal=str_starts_with($path,'/internal/');
     if($mutation && !$internal && ($_SERVER['HTTP_ORIGIN']??'')!==$origin) fail(403,'ORIGIN_REJECTED','Origen no permitido.');
@@ -41,9 +45,9 @@ try {
     if($internal) { require __DIR__.'/../src/ingest.php'; handleInternal($path,$method); }
     $admin=in_array($path,['/api/v1/info','/api/v1/events','/api/v1/config','/api/v1/users','/api/v1/audit'],true)||str_starts_with($path,'/api/v1/users/')||str_starts_with($path,'/api/v1/export/')||str_starts_with($path,'/api/v1/commands');
     $u=sessionUser($admin,$mutation);
-    if($path==='/api/v1/me' && $method==='GET') reply(['user'=>$u,'csrfToken'=>csrfToken($_COOKIE['__Host-sismo_session'])]);
+    if($path==='/api/v1/me' && $method==='GET') reply(['user'=>$u,'csrfToken'=>csrfToken(sessionToken())]);
     if($path==='/api/v1/session' && $method==='DELETE') {
-        query('DELETE FROM sessions WHERE token_hash=?',[hash('sha256',$_COOKIE['__Host-sismo_session'])]); cookie('',time()-3600); reply(['ok'=>true]);
+        query('DELETE FROM sessions WHERE token_hash=?',[hash('sha256',sessionToken())]); cookie('',time()-3600); reply(['ok'=>true]);
     }
     if($path==='/api/v1/me/password' && $method==='POST') {
         $b=body(); $pass=passwordValue($b['password']??null); $old=textField($b['currentPassword']??null,128);

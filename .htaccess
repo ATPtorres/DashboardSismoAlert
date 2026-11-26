@@ -1,0 +1,19 @@
+Options -Indexes
+AcceptPathInfo On
+RewriteEngine On
+
+# Bloquea peticiones directas a código y documentación internos.
+RewriteCond %{THE_REQUEST} " /(.*/)?(backend|tests|tools|deploy|docs|firmware)(/|[? ])" [NC]
+RewriteRule ^ - [F,L]
+
+# No volver a reescribir destinos internos que ya existen.
+RewriteCond %{REQUEST_FILENAME} -f
+RewriteRule ^ - [L]
+
+# El API mantiene su ruta original en PATH_INFO, sin parámetros de enrutamiento manipulables.
+RewriteRule ^api/(.*)$ backend/public/index.php/api/$1 [QSA,L]
+
+# Publica recursos estáticos desde web/ bajo la URL del proyecto.
+RewriteRule ^(assets|styles|src)/(.*)$ web/$1/$2 [L]
+RewriteRule ^$ web/index.html [L]
+RewriteRule ^(.+)$ web/$1 [L]

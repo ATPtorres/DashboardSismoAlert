@@ -1,8 +1,9 @@
 export class Api {
-  constructor() { this.csrf = null; }
+  constructor() { this.csrf = null; this.base = new URL('api/', document.baseURI).pathname; }
+  url(path) { return path.startsWith('/api/') ? this.base + path.slice(5) : path; }
   async request(path, {method = 'GET', body, signal} = {}) {
-    if (method !== 'GET' && location.protocol !== 'https:') throw new Error('El acceso con credenciales requiere HTTPS de confianza.');
-    const response = await fetch(path, {method, credentials: 'same-origin', cache: 'no-store', signal,
+    if (method !== 'GET' && location.protocol !== 'https:' && !['localhost','127.0.0.1','[::1]'].includes(location.hostname)) throw new Error('El acceso con credenciales requiere HTTPS, salvo en localhost.');
+    const response = await fetch(this.url(path), {method, credentials: 'same-origin', cache: 'no-store', signal,
       headers: {Accept: 'application/json', ...(body ? {'Content-Type':'application/json'} : {}), ...(this.csrf ? {'X-CSRF-Token':this.csrf} : {})},
       ...(body ? {body: JSON.stringify(body)} : {})});
     let data; try { data = await response.json(); } catch { throw new Error('Respuesta JSON inválida.'); }
