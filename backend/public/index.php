@@ -45,9 +45,9 @@ try {
     if($internal) { require __DIR__.'/../src/ingest.php'; handleInternal($path,$method); }
     $admin=in_array($path,['/api/v1/info','/api/v1/events','/api/v1/config','/api/v1/users','/api/v1/audit'],true)||str_starts_with($path,'/api/v1/users/')||str_starts_with($path,'/api/v1/export/')||str_starts_with($path,'/api/v1/commands');
     $u=sessionUser($admin,$mutation);
-    if($path==='/api/v1/me' && $method==='GET') reply(['user'=>$u,'csrfToken'=>csrfToken($_COOKIE['__Host-sismo_session'])]);
+    if($path==='/api/v1/me' && $method==='GET') reply(['user'=>$u,'csrfToken'=>csrfToken(sessionToken())]);
     if($path==='/api/v1/session' && $method==='DELETE') {
-        query('DELETE FROM sessions WHERE token_hash=?',[hash('sha256',$_COOKIE['__Host-sismo_session'])]); cookie('',time()-3600); reply(['ok'=>true]);
+        query('DELETE FROM sessions WHERE token_hash=?',[hash('sha256',sessionToken())]); cookie('',time()-3600); reply(['ok'=>true]);
     }
     if($path==='/api/v1/me/password' && $method==='POST') {
         $b=body(); $pass=passwordValue($b['password']??null); $old=textField($b['currentPassword']??null,128);
