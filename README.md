@@ -26,6 +26,10 @@ El servidor escucha HTTPS en loopback, puerto 8443; la CA de desarrollo es `.loc
 
 `tools/setup.sh` puede repetirse: conserva secretos, certificados, cuentas e historial y aplica la migración idempotente 001. No borre volúmenes para actualizar. Renueve certificados antes de expirar (90 días para el de desarrollo).
 
+## Inicio rápido con XAMPP (Windows)
+
+Si prefieres Apache y MariaDB tradicionales, coloca el repositorio en `C:\\xampp\\htdocs\\DashboardSismoAlert`, inicia Apache y MySQL desde el panel de XAMPP, importa `xampp/install.sql` en phpMyAdmin, copia `backend/config/xampp.example.php` como `backend/config/xampp.local.php` y crea el primer administrador con el procedimiento de [instalación XAMPP](xampp/README.md). Después abre `http://localhost/DashboardSismoAlert/`. Este modo HTTP está limitado a localhost y no debe exponerse a la red.
+
 ## Demostración explícita
 
 Desactivada por defecto. Para habilitarla exclusivamente en desarrollo:
